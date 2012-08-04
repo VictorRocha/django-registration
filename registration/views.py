@@ -87,7 +87,7 @@ def activate(request, backend,
         if success_url is None:
             to, args, kwargs = backend.post_activation_redirect(request, account)
             return (json_response(ACTIVATION_SUCCESSFUL) if request.is_ajax() \
-                else redirect(to, *args, **kwargs))
+                selse redirect(to, *args, **kwargs))
         else:
             return (json_response(ACTIVATION_SUCCESSFUL) if request.is_ajax() \
                 else redirect(success_url))
@@ -191,8 +191,8 @@ def register(request, backend, success_url=None, form_class=None,
     """
     backend = get_backend(backend)
     if not backend.registration_allowed(request):       
-        return (REGISTRATION_DISALLOWED if request.is_ajax() else \ 
-            redirect(disallowed_url)
+        return (REGISTRATION_DISALLOWED if request.is_ajax() \
+            else redirect(disallowed_url)
     if form_class is None:
         form_class = backend.get_form_class(request)
 
@@ -202,11 +202,11 @@ def register(request, backend, success_url=None, form_class=None,
             new_user = backend.register(request, **form.cleaned_data)
             if success_url is None:
                 to, args, kwargs = backend.post_registration_redirect(request, new_user)
-                return (json_response(REGISTRATION_SUCCESSFUL) if \
-                    request.is_ajax() else redirect(to, *args, **kwargs))
+                return (json_response(REGISTRATION_SUCCESSFUL) if request.is_ajax() /
+                    else redirect(to, *args, **kwargs))
             else:
-                return (json_response(REGISTRATION_SUCCESSFUL) if \
-                    request.is_ajax() else redirect(success_url))
+                return (json_response(REGISTRATION_SUCCESSFUL) if request.is_ajax() /
+                    else redirect(success_url))
                     
     if request.is_ajax():
         return json_response({
