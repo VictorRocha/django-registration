@@ -3,14 +3,23 @@ Views which allow users to create and activate accounts.
 
 """
 
-
 from django.shortcuts import redirect
 from django.shortcuts import render_to_response
 from django.template import RequestContext
-
+from django.http import HttpResponse
 from registration.backends import get_backend
 
 
+REGISTRATION_DISALLOWED = {'success':False, 'erros':{'disallowed':'Your account has been closed'}}
+REGISTRATION_SUCCESSFUL = {'success':True}
+ACTIVATION_SUCCESSFUL = {'success':True}
+ACTIVATION_FAILED = {'success': False, 'errors':{'deleted':'No account found'}}
+
+def json_response(x):
+    import json
+    return HttpResponse(json.dumps(x, sort_keys=True, indent=2),
+                        content_type='application/json; charset=UTF-8')
+                        
 def activate(request, backend,
              template_name='registration/activate.html',
              success_url=None, extra_context=None, **kwargs):
@@ -77,10 +86,15 @@ def activate(request, backend,
     if account:
         if success_url is None:
             to, args, kwargs = backend.post_activation_redirect(request, account)
-            return redirect(to, *args, **kwargs)
+            return (json_response(ACTIVATION_SUCCESSFUL) if request.is_ajax() \
+                else redirect(to, *args, **kwargs))
         else:
-            return redirect(success_url)
+            return (json_response(ACTIVATION_SUCCESSFUL) if request.is_ajax() \
+                else redirect(success_url))
 
+    if request.is_ajax():
+        return json_response(ACTIVATION_FAILED)
+        
     if extra_context is None:
         extra_context = {}
     context = RequestContext(request)
@@ -176,8 +190,9 @@ def register(request, backend, success_url=None, form_class=None,
     
     """
     backend = get_backend(backend)
-    if not backend.registration_allowed(request):
-        return redirect(disallowed_url)
+    if not backend.registration_allowed(request):       
+        return (REGISTRATION_DISALLOWED if request.is_ajax() else \ 
+            redirect(disallowed_url)
     if form_class is None:
         form_class = backend.get_form_class(request)
 
@@ -187,12 +202,20 @@ def register(request, backend, success_url=None, form_class=None,
             new_user = backend.register(request, **form.cleaned_data)
             if success_url is None:
                 to, args, kwargs = backend.post_registration_redirect(request, new_user)
-                return redirect(to, *args, **kwargs)
+                return (json_response(REGISTRATION_SUCCESSFUL) if \
+                    request.is_ajax() else redirect(to, *args, **kwargs))
             else:
-                return redirect(success_url)
+                return (json_response(REGISTRATION_SUCCESSFUL) if \
+                    request.is_ajax() else redirect(success_url))
+                    
+    if request.is_ajax():
+        return json_response({
+                'success': False,
+                'errors': dict(form.errors.items()),
+                })
     else:
         form = form_class()
-    
+           
     if extra_context is None:
         extra_context = {}
     context = RequestContext(request)
