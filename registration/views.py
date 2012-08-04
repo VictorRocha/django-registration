@@ -192,7 +192,8 @@ def register(request, backend, success_url=None, form_class=None,
                 return (json_response(REGISTRATION_SUCCESSFUL))
             else:
                 return (json_response(REGISTRATION_SUCCESSFUL))
-                    
+    else:
+        form = form_class()              
     return json_response({
                 'success': False,
                 'errors': dict(form.errors.items()),
