@@ -86,24 +86,12 @@ def activate(request, backend,
     if account:
         if success_url is None:
             to, args, kwargs = backend.post_activation_redirect(request, account)
-            return (json_response(ACTIVATION_SUCCESSFUL) if request.is_ajax() \
-                else redirect(to, *args, **kwargs))
+            return (json_response(ACTIVATION_SUCCESSFUL))
         else:
-            return (json_response(ACTIVATION_SUCCESSFUL) if request.is_ajax() \
-                else redirect(success_url))
+            return (json_response(ACTIVATION_SUCCESSFUL))
 
-    if request.is_ajax():
-        return json_response(ACTIVATION_FAILED)
+    return json_response(ACTIVATION_FAILED)
         
-    if extra_context is None:
-        extra_context = {}
-    context = RequestContext(request)
-    for key, value in extra_context.items():
-        context[key] = callable(value) and value() or value
-
-    return render_to_response(template_name,
-                              kwargs,
-                              context_instance=context)
 
 
 def register(request, backend, success_url=None, form_class=None,
@@ -191,8 +179,7 @@ def register(request, backend, success_url=None, form_class=None,
     """
     backend = get_backend(backend)
     if not backend.registration_allowed(request):       
-        return (REGISTRATION_DISALLOWED if request.is_ajax() \
-            else redirect(disallowed_url))
+        return (json_response(REGISTRATION_DISALLOWED))
     if form_class is None:
         form_class = backend.get_form_class(request)
 
@@ -202,26 +189,12 @@ def register(request, backend, success_url=None, form_class=None,
             new_user = backend.register(request, **form.cleaned_data)
             if success_url is None:
                 to, args, kwargs = backend.post_registration_redirect(request, new_user)
-                return (json_response(REGISTRATION_SUCCESSFUL) if request.is_ajax() \
-                    else redirect(to, *args, **kwargs))
+                return (json_response(REGISTRATION_SUCCESSFUL))
             else:
-                return (json_response(REGISTRATION_SUCCESSFUL) if request.is_ajax() \
-                    else redirect(success_url))
+                return (json_response(REGISTRATION_SUCCESSFUL))
                     
-    if request.is_ajax():
-        return json_response({
+    return json_response({
                 'success': False,
                 'errors': dict(form.errors.items()),
                 })
-    else:
-        form = form_class()
-           
-    if extra_context is None:
-        extra_context = {}
-    context = RequestContext(request)
-    for key, value in extra_context.items():
-        context[key] = callable(value) and value() or value
 
-    return render_to_response(template_name,
-                              {'form': form},
-                              context_instance=context)
