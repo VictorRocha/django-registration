@@ -48,6 +48,29 @@ class RegistrationViewTests(TestCase):
                                 'registration/registration_form.html')
         self.failUnless(isinstance(response.context['form'],
                                    forms.RegistrationForm))
+                                   
+    def test_registration_view_initial_ajax(self):
+        r = self.client.get(reverse('registration_register'), {}, 
+                                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+
+
+    def test_registration_view_success_ajax(self):
+        """
+        A ``POST`` to the ``register`` view with valid data properly
+        creates a new user and issues a redirect.
+
+        """
+        response = self.client.post(reverse('registration_register'),
+                                    data={'username': 'alice',
+                                          'email': 'alice@example.com',
+                                          'password1': 'swordfish',
+                                          'password2': 'swordfish'},
+                                    HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(RegistrationProfile.objects.count(), 1)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertNotContains(response,'error')
+        self.assertContains(response,'success')
 
     def test_registration_view_success(self):
         """
@@ -64,7 +87,7 @@ class RegistrationViewTests(TestCase):
                              'http://testserver%s' % reverse('registration_complete'))
         self.assertEqual(RegistrationProfile.objects.count(), 1)
         self.assertEqual(len(mail.outbox), 1)
-
+        
     def test_registration_view_failure(self):
         """
         A ``POST`` to the ``register`` view with invalid data does not
@@ -81,6 +104,22 @@ class RegistrationViewTests(TestCase):
         self.assertFormError(response, 'form', None,
                              [u"The two password fields didn't match.",])
         self.assertEqual(len(mail.outbox), 0)
+        
+    def test_registration_view_failure_ajax(self):
+        """
+        A ``POST`` to the ``register`` view with valid data properly
+        creates a new user and issues a redirect.
+
+        """
+        response = self.client.post(reverse('registration_register'),
+                                    data={'username': 'alice',
+                                          'email': 'alice@example.com',
+                                          'password1': 'swordfish',
+                                          'password2': 'sword'},
+                                    HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response,'error')
+
 
     def test_registration_view_closed(self):
         """
@@ -179,6 +218,30 @@ class RegistrationViewTests(TestCase):
         self.assertRedirects(response, success_redirect)
         self.failUnless(User.objects.get(username='alice').is_active)
 
+    def test_valid_activation_ajax(self):
+        """
+        Test that the ``activate`` view properly handles a valid
+        activation (in this case, based on the default backend's
+        activation window).
+
+        """
+        
+        # First, register an account.
+        self.client.post(reverse('registration_register'),
+                         data={'username': 'alice',
+                               'email': 'alice@example.com',
+                               'password1': 'swordfish',
+                               'password2': 'swordfish'},
+                                HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        profile = RegistrationProfile.objects.get(user__username='alice')
+        response = self.client.get(reverse('registration_activate',
+                                           kwargs={'activation_key': profile.activation_key}),
+                                           HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response,'success')
+        self.failUnless(User.objects.get(username='alice').is_active)
+        
+        
     def test_invalid_activation(self):
         """
         Test that the ``activate`` view properly handles an invalid
