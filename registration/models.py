@@ -9,7 +9,7 @@ from django.db import transaction
 from django.template.loader import render_to_string
 from django.utils.hashcompat import sha_constructor
 from django.utils.translation import ugettext_lazy as _
-
+from django.utils.timezone import utc
 
 SHA1_RE = re.compile('^[a-f0-9]{40}$')
 
@@ -199,9 +199,10 @@ class RegistrationProfile(models.Model):
            method returns ``True``.
         
         """
+        
         expiration_date = datetime.timedelta(days=settings.ACCOUNT_ACTIVATION_DAYS)
-        return self.activation_key == self.ACTIVATED or \
-               (self.user.date_joined + expiration_date <= datetime.datetime.now())
+        return self.activation_key == self.ACTIVATED or \ 
+            (self.user.date_joined + expiration_date <= datetime.datetime.utcnow().replace(tzinfo=utc)) 
     activation_key_expired.boolean = True
 
     def send_activation_email(self, site):
