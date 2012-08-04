@@ -87,7 +87,7 @@ def activate(request, backend,
         if success_url is None:
             to, args, kwargs = backend.post_activation_redirect(request, account)
             return (json_response(ACTIVATION_SUCCESSFUL) if request.is_ajax() \
-                selse redirect(to, *args, **kwargs))
+                else redirect(to, *args, **kwargs))
         else:
             return (json_response(ACTIVATION_SUCCESSFUL) if request.is_ajax() \
                 else redirect(success_url))
