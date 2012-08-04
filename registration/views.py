@@ -192,7 +192,7 @@ def register(request, backend, success_url=None, form_class=None,
     backend = get_backend(backend)
     if not backend.registration_allowed(request):       
         return (REGISTRATION_DISALLOWED if request.is_ajax() \
-            else redirect(disallowed_url)
+            else redirect(disallowed_url))
     if form_class is None:
         form_class = backend.get_form_class(request)
 
